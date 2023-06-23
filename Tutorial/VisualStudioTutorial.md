@@ -56,6 +56,7 @@ Make sure you are signed in to the account associated with your Azure subscripti
 Next, enter a **Project name** for your project, and select **Next**. The Project name must be valid as a C# namespace, so dont use underscores, hyphens, or nonalphanumeric characters.
  
 Under **Additional information**, use the settings specified below the following image.
+
 ![Image](Media/VSAdditionalInfo.png)
 
 - **.NET 6.0 (Long Term Support)** as the Functions worker
