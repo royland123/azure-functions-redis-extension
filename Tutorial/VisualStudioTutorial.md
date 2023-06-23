@@ -34,7 +34,7 @@ The following tutorial shows how to implement basic triggers with Azure Cache fo
 ### Requirements
 
 - Azure subscription
-- Visual Studio Code
+- Visual Studio 
 - Custom NuGet package (available in this repo)
 
 ### 1. Set up an Azure Cache for Redis Instance
@@ -46,29 +46,26 @@ Create a new **Azure Cache for Redis** instance using the Azure portal or your p
 The default settings should suffice. We’ll use a public endpoint for this demo, but you’ll likely want to use a private endpoint for anything in production. 
 The cache can take a bit to create, so feel free to move to the next section while this completes. 
 
-### 2. Set up Visual Studio Code
+### 2. Set up Visual Studio
 
-If you haven’t installed the functions extension for VS Code, do so by searching for _Azure Functions_ in the extensions menu and selecting **Install**. If you don’t have the C# extension installed, please install that as well. 
+Launch Visual Studio and select **New** > **Project** from the **File** menu. In the **Create a new project** dialogue, search for "Azure Functions" and then select **Next**.
+Make sure you are signed in to the account associated with your Azure subscription
 
-![Image](Media/InstallExtensions.png)
+![Image](Media/VisualStudioNewProj.png)
  
-Next, go to the **Azure** tab, and sign-in to your existing Azure account, or create a new one:
+Next, enter a **Project name** for your project, and select **Next**. The Project name must be valid as a C# namespace, so dont use underscores, hyphens, or nonalphanumeric characters.
  
-Create a new local folder on your computer to hold the project that we’ll be building. I’ve named mine “AzureRedisFunctionDemo”
-In the Azure tab, create a new functions app by clicking on the lightning icon in the top right of the **Workspace** box in the lower left of the screen.
+Under **Additional information**, use the settings specified below the following image.
+![Image](Media/VSAdditionalInfo.png)
 
-![Image](Media/CreateFunctionProject.png)
+- **.NET 6.0 (Long Term Support)** as the Functions worker
+- **Empty** as the Function
+- Select **Use Azurite for runtime storage account** as a storage account is required for function state management
 
-Select the new folder that you’ve created. This will start the creation of a new Azure Functions project. You’ll get several on-screen prompts. Select:
+Now select **Create** to create an empty function project. This project has the basic configuration files needed to run your functions.
+Finally, we will add a new class by right clicking in the solution explorer and navigating to **Add** > **New item** and creating a C# class. I've named mine "RedisFunctionsDemo"
 
-- **C#** as the language
-- **.NET 6.0 LTS** as the .NET runtime
-- **Skip for now** as the project template
-Note: If you don’t have the .NET Core SDK installed, you’ll be prompted to do so.
-
-The new project will be created:
-
-![Image](Media/VSCodeWorkspace.png)
+![Image](Media/VisualStudioWorkspace.png)
 
 ### 3. Install Necessary NuGet packages
 
@@ -76,7 +73,7 @@ You’ll need to install two NuGet packages:
 1. [StackExchange.Redis](https://www.nuget.org/packages/StackExchange.Redis/), which is the primary .NET client for Redis. 
 1. Microsoft.Azure.WebJobs.Extensions.Redis, which is the extension that allows Redis keyspace notifications to be used as triggers in Azure Functions. 
 
-Install StackExchange.Redis by going to the **Terminal** tab in VS Code and entering the following command:
+Install StackExchange.Redis by going to the **Package Manager Console** tab in Visual Studio and entering the following command:
 
 ```
 dotnet add package StackExchange.Redis
@@ -84,7 +81,7 @@ dotnet add package StackExchange.Redis
 
 Next, we need to install the Microsoft.Azure.WebJobs.Extensions.Redis package. When this feature is released publically, this will be very simple. But we have to jump through some additional hoops right now. 
 
-   1. Create a `NuGet.Config` file in the project folder (`AzureRedisFunctionDemo` in step 2 above):
+   1. Create a `NuGet.Config` file in the project folder (`RedisTriggersDemo` in step 2 above):
       ```
       <?xml version="1.0" encoding="utf-8"?>
       <configuration>
@@ -98,7 +95,7 @@ Next, we need to install the Microsoft.Azure.WebJobs.Extensions.Redis package. W
       <RestoreSources>$(RestoreSources);./local-packages;https://api.nuget.org/v3/index.json</RestoreSources>
       ```
    1. Create a folder `local-packages` within the project folder, and download the latest NuGet package from [GitHub Releases](https://github.com/Azure/azure-functions-redis-extension/releases) to this `local-packages` folder.
-   1. Install the package:
+   1. Install the package by running the following commands in the **Package Manager Console**:
       ```
       dotnet add package Microsoft.Azure.WebJobs.Extensions.Redis --prerelease
       dotnet restore
@@ -152,17 +149,17 @@ Once it is open, try the following commands:
 
 You should see the triggers activating in the terminal:
 
-![Image](Media/TriggersWorking.png)
+![Image](Media/VisualStudioTriggersWorking.png)
  
 ### 6. Deploy Code to an Azure Function
-Create a new Azure function by going back to the Azure tab, expanding your subscription, and right clicking on **Function App**. Select **Create a Function App in Azure…(Advanced)**.
+Deploy your Azure function by going to the **Solution Explorer**, right click on your **Function App**, and select **Publish**. 
+We will be publishing to Azure as an "Azure Function App (Windows)" but there are other options as well.
 
-![Image](Media/CreateFunctionApp.png)
+![Image](Media/VisualStudioPublish.png)
  
 You will see several prompts on information to configure the new functions app:
 - Enter a unique name
-- Choose **.NET 6** as the runtime stack
-- Choose either **Linux** or **Windows** (either works)
+- Select your cache Subscription
 - Select an existing or new resource group to hold the Function App
 - Choose the same region as your cache instance
 - Select **Premium** as the hosting plan
@@ -171,12 +168,9 @@ You will see several prompts on information to configure the new functions app:
 - Choose an existing storage account or create a new one
 - Create a new Application Insights resource (we’ll use this to confirm the trigger is working)
 
-Wait a few minutes for the new Function App to be created. It will now show up in the drop down under **Function App** in your subscription. Right click on the new function app and select **Deploy to Function App…**
+![Image](Media/VisualStudioPrompts.png)
 
-![Image](Media/DeployToFunction.png)
- 
-The app will build and start deploying. You can track progress in the **Output Window**
-.
+Wait a few minutes for the new Function App to be published.
 Once deployment is complete, open your Function App in the Azure Portal and select the **Log Stream** blade. Wait for log analytics to connect, and then use the Redis console to activate any of the triggers. You should see the triggers being logged here. 
 
 ![Image](Media/LogStream.png)
