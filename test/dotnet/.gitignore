@@ -10,6 +10,9 @@
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
+#azure function specific files
+local.settings.json
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
