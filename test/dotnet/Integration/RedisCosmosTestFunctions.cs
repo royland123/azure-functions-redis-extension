@@ -31,8 +31,8 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             ConnectionMultiplexer.ConnectAsync(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, localhostSetting)).Result.GetDatabase());
 
         // PubSubWrite -- Tests
-        [FunctionName(nameof(SingleChannelToCosmos))]
-        public static async Task SingleChannelToCosmos(
+        [FunctionName(nameof(SingleChannelWriteBehind))]
+        public static async Task SingleChannelWriteBehind(
             [RedisPubSubTrigger(localhostSetting, pubsubChannel)] ChannelMessage pubSubMessage,
              [CosmosDB(
                 databaseName: "DatabaseId",
@@ -53,8 +53,8 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             logger.LogInformation($"Message: \"{redisData.message}\" from Channel: \"{redisData.channel}\" stored in Cosmos DB container: \"{"PSContainerId"}\" with id: \"{redisData.id}\"");
         }
 
-        [FunctionName(nameof(MultipleChannelsToCosmos))]
-        public static async Task MultipleChannelsToCosmos(
+        [FunctionName(nameof(MultipleChannelWriteBehind))]
+        public static async Task MultipleChannelWriteBehind(
             [RedisPubSubTrigger(localhostSetting, pubsubMultiple)] ChannelMessage pubSubMessage,
              [CosmosDB(
                 databaseName: "DatabaseId",
@@ -75,10 +75,10 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             logger.LogInformation($"Message: \"{redisData.message}\" from Channel: \"{redisData.channel}\" stored in Cosmos DB container: \"{"PSContainerId"}\" with id: \"{redisData.id}\"");
         }
 
-        [FunctionName(nameof(AllChannelsToCosmos))]
-        public static async Task AllChannelsToCosmos(
+        [FunctionName(nameof(AllChannelsWriteBehind))]
+        public static async Task AllChannelsWriteBehind(
             [RedisPubSubTrigger(localhostSetting, allChannels)] ChannelMessage pubSubMessage,
-             [CosmosDB(
+            [CosmosDB(
                 databaseName: "DatabaseId",
                 containerName: "PSContainerId",
                 Connection = cosmosDbConnectionSetting)]IAsyncCollector<PubSubData> cosmosOut,
@@ -96,7 +96,71 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             await cosmosOut.AddAsync(redisData);
             logger.LogInformation($"Message: \"{redisData.message}\" from Channel: \"{redisData.channel}\" stored in Cosmos DB container: \"{"PSContainerId"}\" with id: \"{redisData.id}\"");
         }
-        
+
+        [FunctionName(nameof(SingleChannelWriteThrough))]
+        public static void SingleChannelWriteThrough(
+            [RedisPubSubTrigger(localhostSetting, pubsubChannel)] ChannelMessage pubSubMessage,
+            [CosmosDB(
+                databaseName: "DatabaseId",
+                containerName: "PSContainerId",
+                Connection = cosmosDbConnectionSetting)]out dynamic cosmosDBOut,
+            ILogger logger)
+        {
+            //create a PubSubData object from the pubsub message
+            cosmosDBOut = new PubSubData(
+                id: Guid.NewGuid().ToString(),
+                channel: pubSubMessage.Channel,
+                message: pubSubMessage.Message,
+                timestamp: DateTime.UtcNow
+                );
+
+            //write the PubSubData object to Cosmos DB
+            logger.LogInformation($"Message: \"{cosmosDBOut.message}\" from Channel: \"{cosmosDBOut.channel}\" stored in Cosmos DB container: \"{"PSContainerId"}\" with id: \"{cosmosDBOut.id}\"");
+        }
+
+        [FunctionName(nameof(MultipleChannelWriteThrough))]
+        public static void MultipleChannelWriteThrough(
+            [RedisPubSubTrigger(localhostSetting, pubsubMultiple)] ChannelMessage pubSubMessage,
+            [CosmosDB(
+                databaseName: "DatabaseId",
+                containerName: "PSContainerId",
+                Connection = cosmosDbConnectionSetting)]out dynamic cosmosDBOut,
+            ILogger logger)
+        {
+            //create a PubSubData object from the pubsub message
+            cosmosDBOut = new PubSubData(
+                id: Guid.NewGuid().ToString(),
+                channel: pubSubMessage.Channel,
+                message: pubSubMessage.Message,
+                timestamp: DateTime.UtcNow
+                );
+
+            //write the PubSubData object to Cosmos DB
+            logger.LogInformation($"Message: \"{cosmosDBOut.message}\" from Channel: \"{cosmosDBOut.channel}\" stored in Cosmos DB container: \"{"PSContainerId"}\" with id: \"{cosmosDBOut.id}\"");
+        }
+
+        [FunctionName(nameof(AllChannelsWriteThrough))]
+        public static void AllChannelsWriteThrough(
+            [RedisPubSubTrigger(localhostSetting, allChannels)] ChannelMessage pubSubMessage,
+            [CosmosDB(
+                databaseName: "DatabaseId",
+                containerName: "PSContainerId",
+                Connection = cosmosDbConnectionSetting)]out dynamic cosmosDBOut,
+            ILogger logger)
+        {
+            //create a PubSubData object from the pubsub message
+            cosmosDBOut = new PubSubData(
+                id: Guid.NewGuid().ToString(),
+                channel: pubSubMessage.Channel,
+                message: pubSubMessage.Message,
+                timestamp: DateTime.UtcNow
+                );
+
+            //write the PubSubData object to Cosmos DB
+            logger.LogInformation($"Message: \"{cosmosDBOut.message}\" from Channel: \"{cosmosDBOut.channel}\" stored in Cosmos DB container: \"{"PSContainerId"}\" with id: \"{cosmosDBOut.id}\"");
+        }
+
+
         //write-through -- Tests
         [FunctionName(nameof(WriteThrough))]
         public static void WriteThrough(
@@ -164,6 +228,28 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                 //Write the key/value pair to Redis
                 await s_redisDb.StringSetAsync(document.key, document.value);
                 logger.LogInformation($"Key: \"{document.key}\", Value: \"{document.value}\" added to Redis.");
+            }
+        }
+
+        //Write-Around Message caching -- Tests
+        [FunctionName(nameof(WriteAroundMessageAsync))]
+        public static async Task WriteAroundMessageAsync(
+            [CosmosDBTrigger(
+                databaseName: "DatabaseId",
+                containerName: "PSContainerId",
+                Connection = cosmosDbConnectionSetting,
+                LeaseContainerName = "leases", LeaseContainerPrefix = "Write-Around-")]IReadOnlyList<PubSubData> cosmosData,
+            ILogger logger)
+        {
+            //if the list is empty, return
+            if (cosmosData == null || cosmosData.Count <= 0) return;
+
+            //for each new item upladed to cosmos, publish to Redis
+            foreach (var document in cosmosData)
+            {
+                //publish the message to the correct Redis channel
+                await s_redisDb.Multiplexer.GetSubscriber().PublishAsync(document.channel, document.message);
+                logger.LogInformation($"Message: \"{document.message}\" has been published on channel: \"{document.channel}\".");
             }
         }
 

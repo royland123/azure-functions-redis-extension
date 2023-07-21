@@ -15,12 +15,18 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
     {
 
         [Theory]
-        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelToCosmos), RedisCosmosTestFunctions.pubsubChannel, "testValue single")]
-        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelToCosmos), RedisCosmosTestFunctions.pubsubChannel, "testValue multi")]
-        [InlineData(nameof(RedisCosmosTestFunctions.MultipleChannelsToCosmos), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix multi")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsToCosmos), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix all")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsToCosmos), "prefix" + RedisCosmosTestFunctions.pubsubChannel, "testPrefix all")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsToCosmos), "separate", "testSeparate all")]
+        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteBehind), RedisCosmosTestFunctions.pubsubChannel, "testValue single")]
+        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteBehind), RedisCosmosTestFunctions.pubsubChannel, "testValue multi")]
+        [InlineData(nameof(RedisCosmosTestFunctions.MultipleChannelWriteBehind), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix multi")]
+        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteBehind), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix all")]
+        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteBehind), "prefix" + RedisCosmosTestFunctions.pubsubChannel, "testPrefix all")]
+        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteBehind), "separate", "testSeparate all")]
+        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteThrough), RedisCosmosTestFunctions.pubsubChannel, "testValue single")]
+        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteThrough), RedisCosmosTestFunctions.pubsubChannel, "testValue multi")]
+        [InlineData(nameof(RedisCosmosTestFunctions.MultipleChannelWriteThrough), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix multi")]
+        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteThrough), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix all")]
+        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteThrough), "prefix" + RedisCosmosTestFunctions.pubsubChannel, "testPrefix all")]
+        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteThrough), "separate", "testSeparate all")]
         public async void PubSubMessageWrite_SuccessfullyWritesToCosmos(string functionName, string channel, string message)
         {
 
