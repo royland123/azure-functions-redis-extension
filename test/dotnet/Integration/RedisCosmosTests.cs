@@ -143,6 +143,50 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         }
 
         [Fact]
+        public async void WriteAroundMEssage_SuccessfullyPublishesToRedis()
+        {
+            string functionName = nameof(RedisCosmosTestFunctions.WriteAroundMessageAsync);
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+            using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7081))
+            {
+                ISubscriber subscriber = multiplexer.GetSubscriber();
+                subscriber.Subscribe("PubSubChannel", (channel, message) =>
+                {
+                    Assert.Equal("PubSubMessage", message);
+                });
+
+                Container cosmosContainer = client.GetContainer("DatabaseId", "PSContainerId");
+                await Task.Delay(TimeSpan.FromSeconds(5));
+
+                PubSubData redisData = new PubSubData(
+                    id: Guid.NewGuid().ToString(),
+                    channel: "PubSubChannel",
+                    message: "PubSubMessage",
+                    timestamp: DateTime.UtcNow
+                );
+
+                await cosmosContainer.CreateItemAsync(redisData);
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                client.Dispose();
+                functionsProcess.Kill();
+
+                await multiplexer.CloseAsync();
+            }
+           /* using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            {
+                var redisValue = await multiplexer.GetDatabase().StringGetAsync("cosmosKey");
+                await Task.Delay(TimeSpan.FromSeconds(5));
+                Assert.Equal("cosmosValue", redisValue);
+                //await multiplexer.GetDatabase().KeyDeleteAsync("cosmosKey");
+                // await Task.Delay(TimeSpan.FromSeconds(3));
+                await multiplexer.CloseAsync();
+            }*/
+            IntegrationTestHelpers.ClearDataFromCosmosDb("DatabaseId", "PSContainerId");
+        }
+
+
+        [Fact]
         public async void ReadThrough_SuccessfullyWritesToRedis()
         {
             string functionName = nameof(RedisCosmosTestFunctions.ReadThroughAsync);
