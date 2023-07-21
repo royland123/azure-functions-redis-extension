@@ -142,8 +142,9 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             IntegrationTestHelpers.ClearDataFromCosmosDb("DatabaseId", "ContainerId");
         }
 
+
         [Fact]
-        public async void WriteAroundMEssage_SuccessfullyPublishesToRedis()
+        public async void WriteAroundMessage_SuccessfullyPublishesToRedis()
         {
             string functionName = nameof(RedisCosmosTestFunctions.WriteAroundMessageAsync);
             using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
@@ -157,7 +158,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                 });
 
                 Container cosmosContainer = client.GetContainer("DatabaseId", "PSContainerId");
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                //await Task.Delay(TimeSpan.FromSeconds(5));
 
                 PubSubData redisData = new PubSubData(
                     id: Guid.NewGuid().ToString(),
@@ -173,15 +174,6 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
 
                 await multiplexer.CloseAsync();
             }
-           /* using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
-            {
-                var redisValue = await multiplexer.GetDatabase().StringGetAsync("cosmosKey");
-                await Task.Delay(TimeSpan.FromSeconds(5));
-                Assert.Equal("cosmosValue", redisValue);
-                //await multiplexer.GetDatabase().KeyDeleteAsync("cosmosKey");
-                // await Task.Delay(TimeSpan.FromSeconds(3));
-                await multiplexer.CloseAsync();
-            }*/
             IntegrationTestHelpers.ClearDataFromCosmosDb("DatabaseId", "PSContainerId");
         }
 

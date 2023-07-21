@@ -351,3 +351,4 @@ MigrationBackup/
 .ionide/
 /samples/dotnet/local.settings.json
 /samples/CosmosDBIntegration
+/test/dotnet/local.settings.json
