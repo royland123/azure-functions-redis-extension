@@ -213,5 +213,123 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             }
             IntegrationTestHelpers.ClearDataFromCosmosDb("DatabaseId", "ContainerId");
         }
+
+        [Theory]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 50)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 50)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
+        public async void RedisToCosmos_MultipleWritesSuccessfully(string functionName, string key, string value, int numberOfWrites)
+        {
+            string keyFromCosmos = null;
+            string valueFromCosmos = null;
+
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7072))
+            {
+                var redisDb = multiplexer.GetDatabase();
+                //await redisDb.StringSetAsync("Startup", value);
+                //await Task.Delay(TimeSpan.FromSeconds(5));
+
+                for (int i = 1; i <= numberOfWrites; i++)
+                {
+                    await redisDb.StringSetAsync(key + "-" + i, value + "-" + i);
+
+                    //await Task.Delay(TimeSpan.FromSeconds(1));
+
+
+                    using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+                    {
+                        var cosmosDb = client.GetContainer("DatabaseId", "ContainerId");
+                        var queryable = cosmosDb.GetItemLinqQueryable<RedisData>();
+
+                        //get all entries in the container that contain the missed key
+                        using FeedIterator<RedisData> feed = queryable
+                            .Where(p => p.key == key + "-"+ i)
+                            .OrderByDescending(p => p.timestamp)
+                            .ToFeedIterator();
+                        var response = await feed.ReadNextAsync();
+                        //await Task.Delay(TimeSpan.FromSeconds(3));
+
+                        var item = response.FirstOrDefault(defaultValue: null);
+
+                        keyFromCosmos = item?.key;
+                        valueFromCosmos = item?.value;
+                    };
+
+                    Assert.True(keyFromCosmos == key + "-" + i, $"Expected \"{key + "-" + i}\" but got \"{keyFromCosmos}\"");
+                    Assert.True(valueFromCosmos == value + "-" + i, $"Expected \"{value + "-" + i}\" but got \"{valueFromCosmos}\"");
+                }
+
+                await redisDb.KeyDeleteAsync("Startup");
+                for (int i = 1; i <= numberOfWrites; i++) 
+                {
+                    await redisDb.KeyDeleteAsync(key + "-" + i);
+                }
+                IntegrationTestHelpers.ClearDataFromCosmosDb("DatabaseId", "ContainerId");
+                functionsProcess.Kill();
+            };
+        }
+        [Theory]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 50)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 50)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
+        public async void RedisToCosmos_MultipleWritesSuccessfullyV2(string functionName, string key, string value, int numberOfWrites)
+        {
+            string keyFromCosmos = null;
+            string valueFromCosmos = null;
+
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7072))
+            {
+                var redisDb = multiplexer.GetDatabase();
+                //await redisDb.StringSetAsync("Startup", value);
+                //await Task.Delay(TimeSpan.FromSeconds(5));
+
+                for (int i = 1; i <= numberOfWrites; i++)
+                {
+                    await redisDb.StringSetAsync(key + "-" + i, value + "-" + i);
+
+                    //await Task.Delay(TimeSpan.FromSeconds(1));
+                }
+
+
+                using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+                {
+                    var cosmosDb = client.GetContainer("DatabaseId", "ContainerId");
+                    var queryable = cosmosDb.GetItemLinqQueryable<RedisData>();
+                    for (int i = 1; i <= numberOfWrites; i++)
+                    {
+                        //get all entries in the container that contain the missed key
+                        using FeedIterator<RedisData> feed = queryable
+                            .Where(p => p.key == key + "-" + i)
+                            .OrderByDescending(p => p.timestamp)
+                            .ToFeedIterator();
+                        var response = await feed.ReadNextAsync();
+                        //await Task.Delay(TimeSpan.FromSeconds(3));
+
+                        var item = response.FirstOrDefault(defaultValue: null);
+
+                        keyFromCosmos = item?.key;
+                        valueFromCosmos = item?.value;
+
+                        Assert.True(keyFromCosmos == key + "-" + i, $"Expected \"{key + "-" + i}\" but got \"{keyFromCosmos}\"");
+                        Assert.True(valueFromCosmos == value + "-" + i, $"Expected \"{value + "-" + i}\" but got \"{valueFromCosmos}\"");
+                    }
+                };
+
+                for (int i = 1; i <= numberOfWrites; i++)
+                {
+                    await redisDb.KeyDeleteAsync(key + "-" + i);
+                }
+                IntegrationTestHelpers.ClearDataFromCosmosDb("DatabaseId", "ContainerId");
+                functionsProcess.Kill();
+            };
+        }
     }
 }
