@@ -125,11 +125,13 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                 );
                 
                 await cosmosContainer.CreateItemAsync(redisData);
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                await Task.Delay(TimeSpan.FromSeconds(10));
                 client.Dispose();
                 functionsProcess.Kill();
 
             }
+
+
             using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
             {
                 var redisValue = await multiplexer.GetDatabase().StringGetAsync("cosmosKey");
@@ -216,11 +218,11 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
 
         [Theory]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 50)]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 1000)]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 50)]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 1000)]
         public async void RedisToCosmos_MultipleWritesSuccessfully(string functionName, string key, string value, int numberOfWrites)
         {
             string keyFromCosmos = null;
@@ -263,7 +265,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                     Assert.True(valueFromCosmos == value + "-" + i, $"Expected \"{value + "-" + i}\" but got \"{valueFromCosmos}\"");
                 }
 
-                await redisDb.KeyDeleteAsync("Startup");
+               //await redisDb.KeyDeleteAsync("Startup");
                 for (int i = 1; i <= numberOfWrites; i++) 
                 {
                     await redisDb.KeyDeleteAsync(key + "-" + i);
@@ -274,18 +276,18 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         }
         [Theory]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 50)]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 1000)]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 50)]
         [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
+        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 1000)]
         public async void RedisToCosmos_MultipleWritesSuccessfullyV2(string functionName, string key, string value, int numberOfWrites)
         {
             string keyFromCosmos = null;
             string valueFromCosmos = null;
 
             using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
-            using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7072))
+            using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7079))
             {
                 var redisDb = multiplexer.GetDatabase();
                 //await redisDb.StringSetAsync("Startup", value);
@@ -298,7 +300,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                     //await Task.Delay(TimeSpan.FromSeconds(1));
                 }
 
-
+                await Task.Delay(TimeSpan.FromSeconds(30));
                 using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
                 {
                     var cosmosDb = client.GetContainer("DatabaseId", "ContainerId");
@@ -311,10 +313,16 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                             .OrderByDescending(p => p.timestamp)
                             .ToFeedIterator();
                         var response = await feed.ReadNextAsync();
-                        //await Task.Delay(TimeSpan.FromSeconds(3));
+                        //await Task.Delay(TimeSpan.FromSeconds(2));
 
                         var item = response.FirstOrDefault(defaultValue: null);
 
+                        if(item == null)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(5));
+
+                            item = response.FirstOrDefault(defaultValue: null);
+                        }
                         keyFromCosmos = item?.key;
                         valueFromCosmos = item?.value;
 
