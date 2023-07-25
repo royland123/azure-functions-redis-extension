@@ -135,7 +135,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
             {
                 var redisValue = await multiplexer.GetDatabase().StringGetAsync("cosmosKey");
-                await Task.Delay(TimeSpan.FromSeconds(5));
+                await Task.Delay(TimeSpan.FromSeconds(10));
                 Assert.Equal("cosmosValue", redisValue);
                 //await multiplexer.GetDatabase().KeyDeleteAsync("cosmosKey");
                 // await Task.Delay(TimeSpan.FromSeconds(3));
