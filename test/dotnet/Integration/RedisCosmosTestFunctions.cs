@@ -11,8 +11,8 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
 {
     internal class RedisCosmosTestFunctions
     {
-        public const string localhostSetting = "redisLocalhost";
-        public const string cosmosDbConnectionSetting = "CosmosDBConnection";
+        public const string localhostSetting = "RedisConnectionString";
+        public const string cosmosDbConnectionSetting = "CosmosDBConnectionString";
 
         public const string pubsubChannel = "testChannel";
         public const string pubsubMultiple = "testChannel*";
