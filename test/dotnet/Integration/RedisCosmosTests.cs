@@ -221,50 +221,29 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         public async void ReadThrough_UnsuccessfulWhenKeyNotFoundInCosmos()
         {
             string functionName = nameof(RedisCosmosTestFunctions.ReadThroughAsync);
-            //using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
-            //{
-            //    Container cosmosContainer = client.GetContainer("DatabaseId", "ContainerId");
-            //    RedisData redisData = new RedisData(
-            //        id: Guid.NewGuid().ToString(),
-            //        key: "cosmosKey1",
-            //        value: "cosmosValue1",
-            //        timestamp: DateTime.UtcNow
-            //    );
-            //    await cosmosContainer.UpsertItemAsync(redisData);
-            //    await Task.Delay(TimeSpan.FromSeconds(2));
-            //    client.Dispose();
-            //}
 
             Dictionary<string, int> counts = new Dictionary<string, int>
             {
-                { $"Executed '{functionName}' (Succeeded", 1},
+                { $"Executed '{functionName}' (Failed", 1},
                 { $"ERROR: Key: \"unknownKey\" not found in Redis or Cosmos DB. Try adding the Key-Value pair to Redis or Cosmos DB.", 1},
             };
 
             using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
-            using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7082))
+            using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7080))
             {
                 functionsProcess.OutputDataReceived += IntegrationTestHelpers.CounterHandlerCreator(counts);
 
                 var redisValue = await multiplexer.GetDatabase().StringGetAsync("unknownKey");
                 Assert.True(redisValue.IsNull, userMessage: "Key already in Redis Cache, test failed");
-                
 
-                //await Task.Delay(TimeSpan.FromSeconds(5));
-               // redisValue = await multiplexer.GetDatabase().StringGetAsync("unknownKey");
-                //functionsProcess.OutputDataReceived += IntegrationTestHelpers.CounterHandlerCreator(counts);
-
-                await Task.Delay(TimeSpan.FromSeconds(3));
+                await Task.Delay(TimeSpan.FromSeconds(1));
                 Assert.True(redisValue.IsNull);
 
                 var incorrect = counts.Where(pair => pair.Value != 0);
                 Assert.False(incorrect.Any(), JsonSerializer.Serialize(incorrect));
-                //Assert.Equal("cosmosValue1", redisValue);
-                //await multiplexer.GetDatabase().KeyDeleteAsync("cosmosKey1");
-                //await Task.Delay(TimeSpan.FromSeconds(2));
+
                 await multiplexer.CloseAsync();
             }
-            IntegrationTestHelpers.ClearDataFromCosmosDb("DatabaseId", "ContainerId");
         }
 
         [Theory]
