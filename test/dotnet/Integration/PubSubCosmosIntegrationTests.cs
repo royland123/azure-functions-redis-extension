@@ -12,26 +12,26 @@ using Xunit;
 namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
 {
     [Collection("PubSubTriggerTests")]
-    public class RedisCosmosTests
+    public class PubSubCosmosIntegrationTests
     {
 
         [Theory]
-        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteBehind), RedisCosmosTestFunctions.pubsubChannel, "testValue single")]
-        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteBehind), RedisCosmosTestFunctions.pubsubChannel, "testValue multi")]
-        [InlineData(nameof(RedisCosmosTestFunctions.MultipleChannelWriteBehind), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix multi")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteBehind), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix all")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteBehind), "prefix" + RedisCosmosTestFunctions.pubsubChannel, "testPrefix all")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteBehind), "separate", "testSeparate all")]
-        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteThrough), RedisCosmosTestFunctions.pubsubChannel, "testValue single")]
-        [InlineData(nameof(RedisCosmosTestFunctions.SingleChannelWriteThrough), RedisCosmosTestFunctions.pubsubChannel, "testValue multi")]
-        [InlineData(nameof(RedisCosmosTestFunctions.MultipleChannelWriteThrough), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix multi")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteThrough), RedisCosmosTestFunctions.pubsubChannel + "suffix", "testSuffix all")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteThrough), "prefix" + RedisCosmosTestFunctions.pubsubChannel, "testPrefix all")]
-        [InlineData(nameof(RedisCosmosTestFunctions.AllChannelsWriteThrough), "separate", "testSeparate all")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.SingleChannelWriteBehind), PubSubCosmosIntegrationTestFunctions.pubsubChannel, "testValue single")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.SingleChannelWriteBehind), PubSubCosmosIntegrationTestFunctions.pubsubChannel, "testValue multi")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.MultipleChannelWriteBehind), PubSubCosmosIntegrationTestFunctions.pubsubChannel + "suffix", "testSuffix multi")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.AllChannelsWriteBehind), PubSubCosmosIntegrationTestFunctions.pubsubChannel + "suffix", "testSuffix all")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.AllChannelsWriteBehind), "prefix" + PubSubCosmosIntegrationTestFunctions.pubsubChannel, "testPrefix all")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.AllChannelsWriteBehind), "separate", "testSeparate all")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.SingleChannelWriteThrough), PubSubCosmosIntegrationTestFunctions.pubsubChannel, "testValue single")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.SingleChannelWriteThrough), PubSubCosmosIntegrationTestFunctions.pubsubChannel, "testValue multi")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.MultipleChannelWriteThrough), PubSubCosmosIntegrationTestFunctions.pubsubChannel + "suffix", "testSuffix multi")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.AllChannelsWriteThrough), PubSubCosmosIntegrationTestFunctions.pubsubChannel + "suffix", "testSuffix all")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.AllChannelsWriteThrough), "prefix" + PubSubCosmosIntegrationTestFunctions.pubsubChannel, "testPrefix all")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.AllChannelsWriteThrough), "separate", "testSeparate all")]
         public async void PubSubMessageWrite_SuccessfullyWritesToCosmos(string functionName, string channel, string message)
         {
 
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7079))
             {
                 ISubscriber subscriber = multiplexer.GetSubscriber();
@@ -44,7 +44,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             };
 
             string cosmosMessage = null;
-            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting)))
             {
                 var db = client.GetContainer("DatabaseId", "PSContainerId");
                 var queryable = db.GetItemLinqQueryable<PubSubData>();
@@ -65,14 +65,14 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
 
 
         [Theory]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey-1", "testValue1")]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey-2", "testValue2")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteThrough), "testKey-1", "testValue1")]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteBehindAsync), "testKey-2", "testValue2")]
         public async void RedisToCosmos_SuccessfullyWritesToCosmos(string functionName, string key, string value)
         { 
             string keyFromCosmos = null;
             string valueFromCosmos = null;
             
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7079))
             {
                 var redisDb = multiplexer.GetDatabase();
@@ -80,7 +80,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                 await Task.Delay(TimeSpan.FromSeconds(5));
 
                 
-                using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+                using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting)))
                 {
                     var cosmosDb = client.GetContainer("DatabaseId", "ContainerId");
                     var queryable = cosmosDb.GetItemLinqQueryable<RedisData>();
@@ -111,8 +111,8 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         [Fact]
         public async void WriteAround_SuccessfullyWritesToRedis()
         {
-            string functionName = nameof(RedisCosmosTestFunctions.WriteAroundAsync);
-            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+            string functionName = nameof(PubSubCosmosIntegrationTestFunctions.WriteAroundAsync);
+            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7081))
             {
                 Container cosmosContainer = client.GetContainer("DatabaseId", "ContainerId");
@@ -133,7 +133,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             }
 
 
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
             {
                 var redisValue = await multiplexer.GetDatabase().StringGetAsync("cosmosKey");
                 await Task.Delay(TimeSpan.FromSeconds(10));
@@ -149,9 +149,9 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         [Fact]
         public async void WriteAroundMessage_SuccessfullyPublishesToRedis()
         {
-            string functionName = nameof(RedisCosmosTestFunctions.WriteAroundMessageAsync);
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
-            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+            string functionName = nameof(PubSubCosmosIntegrationTestFunctions.WriteAroundMessageAsync);
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
+            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7081))
             {
                 ISubscriber subscriber = multiplexer.GetSubscriber();
@@ -184,8 +184,8 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         [Fact]
         public async void ReadThrough_SuccessfullyWritesToRedis()
         {
-            string functionName = nameof(RedisCosmosTestFunctions.ReadThroughAsync);
-            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+            string functionName = nameof(PubSubCosmosIntegrationTestFunctions.ReadThroughAsync);
+            using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting)))
             {
                 Container cosmosContainer = client.GetContainer("DatabaseId", "ContainerId");
                 RedisData redisData = new RedisData(
@@ -199,7 +199,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                 client.Dispose();
             }
 
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7082))
             {
                 var redisValue = await multiplexer.GetDatabase().StringGetAsync("cosmosKey1");
@@ -220,7 +220,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         [Fact]
         public async void ReadThrough_UnsuccessfulWhenKeyNotFoundInCosmos()
         {
-            string functionName = nameof(RedisCosmosTestFunctions.ReadThroughAsync);
+            string functionName = nameof(PubSubCosmosIntegrationTestFunctions.ReadThroughAsync);
 
             Dictionary<string, int> counts = new Dictionary<string, int>
             {
@@ -228,7 +228,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                 { $"ERROR: Key: \"unknownKey\" not found in Redis or Cosmos DB. Try adding the Key-Value pair to Redis or Cosmos DB.", 1},
             };
 
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7080))
             {
                 functionsProcess.OutputDataReceived += IntegrationTestHelpers.CounterHandlerCreator(counts);
@@ -247,18 +247,18 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
         }
 
         [Theory]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 1000)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 1000)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteThrough), "testKey1", "testValue1", 1000)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 1000)]
         public async void RedisToCosmos_MultipleWritesSuccessfully(string functionName, string key, string value, int numberOfWrites)
         {
             string keyFromCosmos = null;
             string valueFromCosmos = null;
 
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7072))
             {
                 var redisDb = multiplexer.GetDatabase();
@@ -272,7 +272,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                     //await Task.Delay(TimeSpan.FromSeconds(1));
 
 
-                    using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+                    using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting)))
                     {
                         var cosmosDb = client.GetContainer("DatabaseId", "ContainerId");
                         var queryable = cosmosDb.GetItemLinqQueryable<RedisData>();
@@ -305,18 +305,18 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
             };
         }
         [Theory]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteThrough), "testKey1", "testValue1", 1000)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
-        [InlineData(nameof(RedisCosmosTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 1000)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteThrough), "testKey1", "testValue1", 10)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteThrough), "testKey1", "testValue1", 100)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteThrough), "testKey1", "testValue1", 1000)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 10)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 100)]
+        [InlineData(nameof(PubSubCosmosIntegrationTestFunctions.WriteBehindAsync), "testKey2", "testValue2", 1000)]
         public async void RedisToCosmos_MultipleWritesSuccessfullyV2(string functionName, string key, string value, int numberOfWrites)
         {
             string keyFromCosmos = null;
             string valueFromCosmos = null;
 
-            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.localhostSetting)))
+            using (ConnectionMultiplexer multiplexer = ConnectionMultiplexer.Connect(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.localhostSetting)))
             using (Process functionsProcess = IntegrationTestHelpers.StartFunction(functionName, 7079))
             {
                 var redisDb = multiplexer.GetDatabase();
@@ -331,7 +331,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
                 }
 
                 await Task.Delay(TimeSpan.FromSeconds(30));
-                using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting)))
+                using (CosmosClient client = new CosmosClient(RedisUtilities.ResolveConnectionString(IntegrationTestHelpers.localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting)))
                 {
                     var cosmosDb = client.GetContainer("DatabaseId", "ContainerId");
                     var queryable = cosmosDb.GetItemLinqQueryable<RedisData>();

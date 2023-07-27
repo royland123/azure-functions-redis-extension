@@ -108,7 +108,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
 
         internal static void ClearDataFromCosmosDb(string databaseName, string containerName)
         {
-            using CosmosClient client = new(RedisUtilities.ResolveConnectionString(localsettings, RedisCosmosTestFunctions.cosmosDbConnectionSetting));
+            using CosmosClient client = new(RedisUtilities.ResolveConnectionString(localsettings, PubSubCosmosIntegrationTestFunctions.cosmosDbConnectionSetting));
             var container = client.GetContainer(databaseName, containerName);
             var items = container.GetItemLinqQueryable<RedisData>(allowSynchronousQueryExecution: true);
 

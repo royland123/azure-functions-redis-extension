@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Redis.Tests.Integration
 {
-    internal class RedisCosmosTestFunctions
+    internal class PubSubCosmosIntegrationTestFunctions
     {
         //resolved from local.settings.json
         public const string localhostSetting = "RedisConnectionString";
