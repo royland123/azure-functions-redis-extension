@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
@@ -33,22 +35,22 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
                 Connection = CosmosDbConnectionSetting,
                 LeaseContainerName = "leases",
                 CreateLeaseContainerIfNotExists = true)]IReadOnlyList<StreamData> input, ILogger logger)
-        {
+            {
             if (input == null) return;
 
             // Iterate through each changed document
-            foreach (var document in input)
-            {
+                foreach (var document in input)
+                {
                 logger.LogInformation("{messageID} changed and sent to {stream} ", document.id, StreamName);
 
-                var values = new NameValueEntry[document.values.Count];
-                int i = 0;
+                    var values = new NameValueEntry[document.values.Count];
+                    int i = 0;
 
                 // Format the key/value pairs
-                foreach (KeyValuePair<string, string> entry in document.values)
-                {
-                    values[i++] = new NameValueEntry(entry.Key, entry.Value);
-                }
+                    foreach (KeyValuePair<string, string> entry in document.values)
+                    {
+                        values[i++] = new NameValueEntry(entry.Key, entry.Value);
+                    }
 
                 // Upload value to Redis Stream
                 await _redisDB.Value.StreamAddAsync(StreamName, values);
@@ -92,7 +94,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
                     // Upload value to Redis Stream
                     await _redisDB.Value.StreamAddAsync(StreamNameSingleDocument, values, messageId: message.Key, maxLength: document.maxlen);
                 }
-            }  
-        }  
-    }
+            }
+        }
+     }
 }

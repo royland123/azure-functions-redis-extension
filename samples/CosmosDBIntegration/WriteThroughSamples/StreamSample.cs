@@ -29,7 +29,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
         [FunctionName(nameof(WriteThroughForStream))]
         public static void WriteThroughForStream(
                 [RedisStreamTrigger(RedisConnectionSetting, StreamName)] StreamEntry entry,
-                [CosmosDB(
+                 [CosmosDB(
                     databaseName: DatabaseSetting,
                     containerName: ContainerSetting,               
                     Connection = CosmosDbConnectionSetting)] ICollector<StreamData> items,
