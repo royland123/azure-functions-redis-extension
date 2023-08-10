@@ -12,15 +12,15 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
     public static class PubSubSample
     {
         //Connection string settings that will be resolved from local.settings.json file
-        public const string redisConnectionSetting = "redisConnectionString";
-        public const string cosmosDbConnectionSetting = "CosmosDbConnectionString";
+        public const string RedisConnectionSetting = "RedisConnectionString";
+        public const string CosmosDbConnectionSetting = "CosmosDbConnectionString";
 
         //Cosmos DB settings that will be resolved from local.settings.json file
-        public const string databaseSetting = "%CosmosDbDatabaseId%";
-        public const string containerSetting = "%CosmosDbContainerId%";
+        public const string DatabaseSetting = "%CosmosDbDatabaseId%";
+        public const string ContainerSetting = "%PubSubCosmosDbContainerId%";
 
         private static readonly Lazy<IDatabaseAsync> s_redisDb = new Lazy<IDatabaseAsync>(() =>
-            ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable(redisConnectionSetting)).GetDatabase());
+            ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable(RedisConnectionSetting)).GetDatabase());
 
 
         /// <summary>
@@ -32,17 +32,19 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
         /// <param name="logger"> An ILogger that is used to write informational log messages.</param>
         /// <returns></returns>
         /// <exception cref="Exception"> Thrown when the requested key is not found in Redis or Cosmos DB</exception>
-        [FunctionName(nameof(ReadThroughAsync))]
-        public static async Task ReadThroughAsync(
-            [RedisPubSubTrigger(redisConnectionSetting, "__keyevent@0__:keymiss")] string missedKey,
+        [FunctionName(nameof(PubsubReadThroughAsync))]
+        public static async Task PubsubReadThroughAsync(
+            [RedisPubSubTrigger(RedisConnectionSetting, "__keyevent@0__:keymiss")] string missedKey,
             [CosmosDB(
-                databaseName: databaseSetting,
-                containerName: containerSetting,
-                Connection = cosmosDbConnectionSetting)]CosmosClient cosmosDB,
+                databaseName: DatabaseSetting,
+                containerName: ContainerSetting,
+                Connection = CosmosDbConnectionSetting)]CosmosClient cosmosDB,
             ILogger logger)
         {
+            if (missedKey == StreamSample.StreamNameSingleDocument || missedKey == ListSample.ListKey) return;
+
             //get the Cosmos DB database and the container to read from
-            Container cosmosDBContainer = cosmosDB.GetContainer(Environment.GetEnvironmentVariable(databaseSetting.Replace("%", "")), Environment.GetEnvironmentVariable(containerSetting.Replace("%", "")));
+            Container cosmosDBContainer = cosmosDB.GetContainer(Environment.GetEnvironmentVariable(DatabaseSetting.Replace("%", "")), Environment.GetEnvironmentVariable(ContainerSetting.Replace("%", "")));
             IOrderedQueryable<RedisData> queryable = cosmosDBContainer.GetItemLinqQueryable<RedisData>();
 
             //get all entries in the container that contain the missed key

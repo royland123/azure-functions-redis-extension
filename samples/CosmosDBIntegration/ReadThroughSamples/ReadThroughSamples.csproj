@@ -4,7 +4,7 @@
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\Models\RedisData.cs" Link="RedisData.cs" />
+    <Compile Include="..\Models\RedisData.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.CosmosDB" Version="4.3.0" />
@@ -13,6 +13,8 @@
     <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Microsoft.Azure.Functions.Worker.Extensions.Redis\Microsoft.Azure.Functions.Worker.Extensions.Redis.csproj" />
+    <ProjectReference Include="..\..\..\src\Microsoft.Azure.WebJobs.Extensions.Redis\Microsoft.Azure.WebJobs.Extensions.Redis.csproj" />
     <ProjectReference Include="..\..\dotnet\Microsoft.Azure.WebJobs.Extensions.Redis.Samples.csproj" />
   </ItemGroup>
   <ItemGroup>

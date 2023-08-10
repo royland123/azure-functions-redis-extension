@@ -1,6 +1,4 @@
-﻿using Microsoft.Azure.Functions.Worker.Extensions.Redis;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Redis.Samples.Models;
+﻿using Microsoft.Azure.WebJobs.Extensions.Redis.Samples.Models;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System;
@@ -11,17 +9,17 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
     public static class PubSubSample
     {
         //Connection string settings that will be resolved from local.settings.json file
-        public const string redisConnectionSetting = "redisConnectionString";
-        public const string cosmosDbConnectionSetting = "CosmosDbConnectionString";
+        public const string RedisConnectionSetting = "RedisConnectionString";
+        public const string CosmosDbConnectionSetting = "CosmosDbConnectionString";
 
         //Cosmos DB settings that will be resolved from local.settings.json file
-        public const string databaseSetting = "%CosmosDbDatabaseId%";
-        public const string containerSetting = "%CosmosDbContainerId%";
-        public const string pubSubContainerSetting = "%PubSubContainerId%";
-        public const string pubSubChannelSetting = "%PubSubChannel%";
+        public const string DatabaseSetting = "%CosmosDbDatabaseId%";
+        public const string ContainerSetting = "%PubSubCosmosDbContainerId%";
+        public const string PubSubContainerSetting = "%MessagesCosmosDbContainerId%";
+        public const string PubSubChannelSetting = "%PubSubChannel%";
 
         private static readonly IDatabaseAsync s_redisDb =
-            ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable(redisConnectionSetting)).GetDatabase();
+            ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable(RedisConnectionSetting)).GetDatabase();
 
  
          /// <summary>
@@ -31,13 +29,13 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
          /// <param name="cosmosDBOut"> An IAsyncCollector that is used to write RedisData to Cosmos DB.</param>
          /// <param name="logger"> An ILogger that is used to write informational log messages.</param>
          /// <returns></returns>
-        [FunctionName(nameof(WriteBehindAsync))]
-        public static async Task WriteBehindAsync(
-            [RedisPubSubTrigger(redisConnectionSetting, "__keyevent@0__:set")] string newKey,
+        [FunctionName(nameof(PubsubWriteBehindAsync))]
+        public static async Task PubsubWriteBehindAsync(
+            [RedisPubSubTrigger(RedisConnectionSetting, "__keyevent@0__:set")] string newKey,
             [CosmosDB(
-                databaseName: databaseSetting,
-                containerName: containerSetting,
-                Connection = cosmosDbConnectionSetting)]IAsyncCollector<RedisData> cosmosDBOut,
+                databaseName: DatabaseSetting,
+                containerName: ContainerSetting,
+                Connection = CosmosDbConnectionSetting)]IAsyncCollector<RedisData> cosmosDBOut,
             ILogger logger)
         {
             //load data from Redis into a record
@@ -50,7 +48,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
 
             //write the RedisData object to Cosmos DB using the IAsyncCollector
             await cosmosDBOut.AddAsync(redisData);
-            logger.LogInformation($"Key: \"{newKey}\", Value: \"{redisData.value}\" added to Cosmos DB container: \"{Environment.GetEnvironmentVariable(containerSetting.Replace("%", ""))}\" at id: \"{redisData.id}\"");
+            logger.LogInformation($"Key: \"{newKey}\", Value: \"{redisData.value}\" added to Cosmos DB container: \"{Environment.GetEnvironmentVariable(ContainerSetting.Replace("%", ""))}\" at id: \"{redisData.id}\"");
         }
 
         /// <summary>
@@ -60,13 +58,13 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
         /// <param name="cosmosDBOut"> An IAsyncCollector that is used to write the PubSubData to Cosmos DB.</param>
         /// <param name="logger"> An ILogger that is used to write informational log messages.</param>
         /// <returns></returns>
-        [FunctionName(nameof(WriteBehindMessageAsync))]
-        public static async Task WriteBehindMessageAsync(
-            [RedisPubSubTrigger(redisConnectionSetting, pubSubChannelSetting)] ChannelMessage pubSubMessage,
+        [FunctionName(nameof(PubsubWriteBehindMessageAsync))]
+        public static async Task PubsubWriteBehindMessageAsync(
+            [RedisPubSubTrigger(RedisConnectionSetting, PubSubChannelSetting)] ChannelMessage pubSubMessage,
             [CosmosDB(
-                databaseName: databaseSetting,
-                containerName: pubSubContainerSetting,
-                Connection = cosmosDbConnectionSetting)]IAsyncCollector<PubSubData> cosmosDBOut,
+                databaseName: DatabaseSetting,
+                containerName: PubSubContainerSetting,
+                Connection = CosmosDbConnectionSetting)]IAsyncCollector<PubSubData> cosmosDBOut,
             ILogger logger)
         {
             //create a PubSubData object from the pubsub message
@@ -79,7 +77,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.Redis.Samples
 
             //write the PubSubData object to Cosmos DB using the IAsyncCollector
             await cosmosDBOut.AddAsync(redisData);
-            logger.LogInformation($"Message: \"{redisData.message}\" from Channel: \"{redisData.channel}\" stored in Cosmos DB container: \"{Environment.GetEnvironmentVariable(pubSubContainerSetting.Replace("%", ""))}\" with id: \"{redisData.id}\"");
+            logger.LogInformation($"Message: \"{redisData.message}\" from Channel: \"{redisData.channel}\" stored in Cosmos DB container: \"{Environment.GetEnvironmentVariable(PubSubContainerSetting.Replace("%", ""))}\" with id: \"{redisData.id}\"");
         }
     }
 }
